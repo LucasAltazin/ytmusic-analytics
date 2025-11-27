@@ -1,67 +1,192 @@
-# YTMusic Analytics
+# 🎵 YTMusic Analytics  
+A full-stack data platform built from **Google Takeout**, **Spotify API**, **BigQuery**, **dbt**, **n8n**, and **Looker Studio**.
 
-Project structure aligned with Products & Epics:
+This project reconstructs and enriches my entire **YouTube Music Library** and **Listening History** into a complete analytics ecosystem with automated ETL pipelines and dashboards.
 
-- Product A – YT Music Library → `src/library/`
-- Product B – Listening History → `src/history/`
-- Product C – ETL Automation → `src/automation/`
+---
 
-See Jira epics A/B/C for detailed user stories.
+# 🚀 Project Overview
 
+This repository contains **three data products**, each structured as a set of Epics and deliverables.
 
+### **Product A — YT Music Library (src/library/)**
+Extract, clean, enrich and analyse my full saved library from **Google Takeout**.
+
+Core features:
+- Extract music library + playlists  
+- Standardize metadata (track, artist, album)  
+- Enrich via Spotify (genres, duration, popularity…)  
+- Build dbt models (stg → int → mart)  
+- Publish Library dashboard in Looker Studio  
+
+### **Product B — Listening History (src/history/)**
+Parse my full **YouTube + YouTube Music** watch history.
+
+Core features:
+- Extract and normalize watch-history.json  
+- Detect music vs non-music  
+- Join with Spotify enrichment  
+- Build `fact_listening` mart  
+- Dashboard: Listening patterns, top tracks, session metrics  
+
+### **Product C — ETL Automation (src/automation/)**
+Orchestrate all ETL with **n8n**, **dbt Cloud** and automated monitoring.
+
+Core features:
+- Automated monthly Library refresh  
+- Bi-weekly History ingestion  
+- CI + testing pipeline  
+- Monitoring dashboard  
+
+---
+
+# 🗂 Project Structure
 ytmusic-analytics/
-├─ dashboards/                        # Looker Studio, captures, doc dashboards
+├─ dashboards/ # Looker Studio captures & documentation
 ├─ data/
-│  ├─ raw/
-│  │  ├─ takeout/
-│  │  │  ├─ youtube_music/
-│  │  │  │  ├─ history/              # search-history.json, watch-history.json (Takeout brut)
-│  │  │  │  ├─ music_library/        # music library songs.csv (Takeout brut)
-│  │  │  │  └─ playlists/            # tous les *-videos.csv + playlists.csv (Takeout brut)
-│  │  │  └─ samples/                 # history_sample.json, library_songs_sample.json
-│  │  └─ ytmusic/                    # extractions brutes via ytmusicapi (Product A)
-│  ├─ interim/                       # fichiers temporaires (staging local)
-│  └─ processed/
-│     └─ history/                    # outputs de parsing/agrégation
-│        ├─ takeout_history_all.csv
-│        └─ takeout_history_mvp.csv
+│ ├─ raw/
+│ │ ├─ takeout/
+│ │ │ ├─ youtube_music/
+│ │ │ │ ├─ history/ # watch-history.json, search-history.json
+│ │ │ │ ├─ music_library/ # music library songs.csv
+│ │ │ │ └─ playlists/ # playlist-videos.csv files
+│ │ │ └─ samples/ # sample files for dev
+│ │ └─ ytmusic/ # (legacy) raw ytmusicapi extractions
+│ ├─ interim/ # ETL staging outputs
+│ └─ processed/ # aggregated outputs (history_clean, dq logs…)
 │
-├─ dbt/                              # projet dbt (sources, models, tests, docs)
+├─ dbt/ # dbt models, tests, documentation
 │
-├─ orchestration/                    # config n8n, scripts shell, jobs dbt Cloud
+├─ orchestration/ # n8n workflows, shell jobs, CI triggers
 │
-├─ secrets/                          # identifiants/API keys (gitignored)
-│  ├─ browser.json                   # ytmusicapi (cookies)
-│  ├─ oauth.json                     # OAuth local
-│  ├─ oauth_client.json              # client OAuth GCP
-│  └─ ytmusic-analytics-*.json       # service account BigQuery
+├─ secrets/ (gitignored) # credentials: GCP SA, Spotify, OAuth
 │
 ├─ src/
-│  ├─ library/                       # Product A – Library
-│  │  ├─ a1_extract_load/           # Epic A1 – ytmusicapi → BigQuery
-│  │  │  └─ fetch_ytmusic.py
-            extract_library.py
-│  │  ├─ a2_spotify_enrich/         # Epic A2 – enrichissement Spotify (genres)
-│  │  ├─ a3_dbt/                    # Epic A3 – modèles dbt pour la bibliothèque
-│  │  └─ a4_dashboard/              # Epic A4 – préparation dashboard Library
-│  │
-│  ├─ history/                       # Product B – Listening History
-│  │  ├─ b1_extract_load/           # Epic B1 – parsing Takeout + load BigQuery
-│  │  │  ├─ parse_takeout_history.py
-│  │  │  ├─ parse_takeout_history_tt.py
-│  │  │  └─ etl_raw_history_bq.py
-│  │  ├─ b2_spotify_enrich/         # Epic B2 – enrichissement Spotify pour l’historique
-│  │  ├─ b3_dbt/                    # Epic B3 – modèles dbt (stg → int → fact_listening)
-│  │  └─ b4_dashboard/              # Epic B4 – dashboard Listening History
-│  │
-│  └─ automation/                    # Product C – ETL Automation
-│     ├─ c1_n8n/                     # Epic C1 – workflows n8n (Library/History)
-│     ├─ c2_dbt_automation/          # Epic C2 – jobs dbt, CI, triggers
-│     └─ c3_monitoring/              # Epic C3 – logging & monitoring
+│ ├─ config/ # whitelist, constants, params
+│ ├─ library/ # Product A – Library
+│ │ ├─ a1_extract_load/ # Epic A1: Takeout → BigQuery
+│ │ ├─ a2_spotify_enrich/ # Epic A2: Spotify enrichment
+│ │ ├─ a3_dbt/ # Epic A3: dbt models
+│ │ └─ a4_dashboard/ # Epic A4: Library dashboard prep
+│ │
+│ ├─ history/ # Product B – Listening History
+│ │ ├─ b1_extract_load/ # Epic B1: Parse takeout history → BQ
+│ │ ├─ b2_spotify_enrich/ # Epic B2: Spotify enrichment
+│ │ ├─ b3_dbt/ # Epic B3: dbt history models
+│ │ └─ b4_dashboard/ # Epic B4: listening dashboard
+│ │
+│ └─ automation/ # Product C – ETL Automation
+│ ├─ c1_n8n/
+│ ├─ c2_dbt_automation/
+│ └─ c3_monitoring/
 │
-├─ venv/                             # environnement virtuel Python
-│
-├─ .env.example                      # variables d’environnement d’exemple :contentReference[oaicite:2]{index=2}
-├─ .gitignore                        # ignore venv, secrets, data processed/interim, etc. :contentReference[oaicite:3]{index=3}
-├─ README.md                         # description projet, mapping produits/épics :contentReference[oaicite:4]{index=4}
-└─ setup_structure.py                # script pour créer l’arborescence de base :contentReference[oaicite:5]{index=5
+├─ .gitignore
+├─ README.md
+└─ setup_structure.py # bootstrap the folder structure
+
+
+---
+
+# 🏗 ETL Pipeline — Product A
+
+### **A1 — Extract & Load (Google Takeout → BigQuery)**  
+✔ Extract library + whitelisted playlists  
+✔ Deduplicate  
+✔ Merge playlists metadata from library  
+✔ Load into BigQuery table `raw_library`  
+✔ Perform data quality checks (missing artists, missing albums…)  
+
+Scripts used:
+- `src/library/a1_extract_load/extract_library_takeout.py`
+- `src/library/a1_extract_load/load_library_bq.py`
+- `src/library/a1_extract_load/dq_check_library.py`
+
+BigQuery tables:
+ytmusic_raw.raw_library
+
+---
+
+# 🎧 Product B — Listening History
+
+Pipeline:
+1. Parse detailed Watch History Takeout  
+2. Normalize timestamps  
+3. Detect “music” events  
+4. Join with Spotify metadata  
+5. Build `fact_listening` via dbt  
+
+---
+
+# 🤖 Product C — ETL Automation
+
+Automations handled by:
+- **n8n workflows** (monthly library refresh, bi-weekly history refresh)
+- **dbt Cloud jobs** triggered by API
+- **logging / alerting** in BigQuery + Looker
+
+---
+
+# 🛠 Installation & Usage
+
+### **Create virtual environment**
+python -m venv venv
+.\venv\Scripts\Activate.ps1 # Windows
+
+### **Install dependencies**
+pip install -r requirements.txt
+
+
+### **Run extraction (Library + Playlists)**
+python src/library/a1_extract_load/extract_library_takeout.py
+
+### **Run Data Quality checks**
+python src/library/a1_extract_load/dq_check_library.py
+
+
+---
+
+# 📊 Dashboards
+
+Looker Studio dashboards (screenshots coming soon):
+- Library Overview  
+- Playlist Explorer  
+- Listening History Trends  
+- Artist/Genre explorer  
+
+---
+
+# 📚 Jira Epics Mapping
+
+| Epic | Description |
+|------|-------------|
+| **A1** | Extract & Load Library (Takeout → BQ) |
+| **A2** | Spotify Enrichment (Genres & Metadata) |
+| **A3** | dbt Models (Library) |
+| **A4** | Library Dashboard |
+| **B1-B4** | Listening History Product |
+| **C1-C3** | Pipeline Automation & Monitoring |
+
+---
+
+# 📌 Roadmap (Next Steps)
+
+- [ ] Spotify enrichment (A2)  
+- [ ] Build dbt staging models  
+- [ ] Generate enriched mart tables  
+- [ ] Build Library dashboard MVP  
+- [ ] Automate ETL via n8n  
+- [ ] Monitoring dashboard  
+
+---
+
+# 👤 Author  
+**Lucas Altazin**  
+Product Owner & Data Analyst  
+Brussels, Belgium  
+
+📧 Contact available on demand  
+🐙 GitHub: [LucasAltazin](https://github.com/LucasAltazin)
+
+---
+
+
